@@ -9,6 +9,8 @@ import (
 	"strings"
 )
 
+// 实现一个配置文件解析器，用于读取redis服务器的配置文件，并将其映射到ServerProperties结构体中。
+// 支持：默认配置初始化功能、配置文件解析功能、配置文件加载入口。
 // config file
 type ServerProperties struct {
 	Bind           string   `cfg:"bind"`            // bind address
@@ -34,18 +36,18 @@ func init() {
 }
 
 // Parse : parse configuration file
-func parse(src io.Reader) (*ServerProperties) {
+func parse(src io.Reader) *ServerProperties {
 	config := &ServerProperties{}
 	rawMap := make(map[string]string)
 	// read configuration file
-	scanner := bufio.NewScanner(src)
+	scanner := bufio.NewScanner(src) // create a new scanner to read the file line by line
 	for scanner.Scan() {
 		line := scanner.Text()
-		if line == "" || line[0] == '#' {
-			continue // skip empty lines and comments
+		if line == "" || line[0] == '#' { // skip empty lines and comments
+			continue
 		}
 		// split line into key and value
-		pivot := strings.Index(line, ":")
+		pivot := strings.Index(line, " ")
 		if pivot > 0 && pivot < len(line)-1 { // check if the line contains a key-value pair
 			key := strings.TrimSpace(line[:pivot]) //  trailing white spaces
 			value := strings.TrimSpace(line[pivot+1:])
@@ -55,15 +57,16 @@ func parse(src io.Reader) (*ServerProperties) {
 			return nil
 		}
 	}
+
 	// parse key-value pairs into struct fields
-	t := reflect.TypeOf(config)  // get the type of the struct
-	v := reflect.ValueOf(config) // get the value of the struct
+	t := reflect.TypeOf(config)
+	v := reflect.ValueOf(config) // by using reflect package to get the type and value of the struct dynamically
 	for i := 0; i < t.Elem().NumField(); i++ {
 		filed := t.Elem().Field(i)
 		filedVal := v.Elem().Field(i)
-		key, ok := filed.Tag.Lookup("cfg")
+		key, ok := filed.Tag.Lookup("cfg") // get the cfg tag value
 		if !ok {
-			key = filed.Name
+			key = filed.Name // if no cfg tag, use the field name as the key
 		}
 		value, ok := rawMap[strings.ToLower(key)]
 		if ok {
@@ -90,7 +93,7 @@ func parse(src io.Reader) (*ServerProperties) {
 	return config
 }
 func SetupConfig(configFilename string) {
-	file, err := os.Open(configFilename)
+	file, err := os.Open(configFilename) // open the configuration file
 	if err != nil {
 		panic(err)
 	}
@@ -100,5 +103,11 @@ func SetupConfig(configFilename string) {
 			panic(err)
 		}
 	}(file)
-	Properties = parse(file)
+	Properties = parse(file) // parse the configuration file
+	if Properties == nil {
+		panic("parse config error")
+	}
+	// else {
+	// 	fmt.Println("Properties:", Properties) // for debug
+	// }
 }
