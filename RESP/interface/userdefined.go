@@ -15,7 +15,7 @@ func (b *BulkReply) ToBytes() []byte {
 		return []byte("$0\r\n\r\n")
 
 	}
-	return []byte("$" + string(len(b.Arg)) + "\r\n" + string(b.Arg) + "\r\n")
+	return []byte("$" + strconv.Itoa(len(b.Arg)) + "\r\n" + string(b.Arg) + "\r\n")
 }
 func MakeBulkReply(arg []byte) *BulkReply {
 	return &BulkReply{Arg: arg}
@@ -41,33 +41,43 @@ func (r *MultiBulkReply) ToBytes() []byte {
 func MakeMultiBulkReply(args [][]byte) *MultiBulkReply {
 	return &MultiBulkReply{Args: args}
 }
+
 // standard error reply
 type StandardErrorReply struct {
 	Err string
 }
+
 func (s *StandardErrorReply) ToBytes() []byte {
 	return []byte("-ERR " + s.Err + "\r\n")
 }
 func MakeStandardErrorReply(err string) *StandardErrorReply {
 	return &StandardErrorReply{Err: err}
 }
-//Integer reply
+
+// Integer reply
 type IntegerReply struct {
 	Code int64
 }
+
 func (i *IntegerReply) ToBytes() []byte {
 	return []byte(":" + strconv.FormatInt(i.Code, 10) + "\r\n")
 }
 func MakeIntegerReply(code int64) *IntegerReply {
 	return &IntegerReply{Code: code}
 }
+
 // status reply
 type StatusReply struct {
 	Code string
 }
+
 func (s *StatusReply) ToBytes() []byte {
 	return []byte("+" + s.Code + "\r\n")
 }
+func MakeStatusReply(code string) *StatusReply {
+	return &StatusReply{Code: code}
+}
+
 // what's more ,emplement a function to decide whether the reply is a error reply or not
 func (s *StatusReply) IsErrorReply() bool {
 	return s.Code[0] == '-'
