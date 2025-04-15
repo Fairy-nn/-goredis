@@ -1,5 +1,6 @@
 package resp
 
+// 处理 RESP 协议的错误类型
 // argument number error reply
 type ArgNumErrReply struct {
 	Cmd string
