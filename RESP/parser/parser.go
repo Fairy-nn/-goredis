@@ -123,26 +123,21 @@ func parseIt(reader io.Reader, ch chan<- *Parser) {
 	for {
 		var ioErr bool
 		msg, ioErr, err = readLine(bufReader, &parserResult) // read a line from the buffer
-		print("msg:", string(msg), "ioErr:", ioErr, "err:", err, "\n")
 		if err != nil {
 			// io error, return the error
 			if ioErr {
 				ch <- &Parser{Err: err}
-
-				print("Error encountered, closing channel\n")
 				close(ch)
 				return
 			}
 			ch <- &Parser{Err: err}
 
-			print("Error encounterdddddddddded, closing channel\n")
 			parserResult = ParserResult{}
 			continue
 		}
 		// not multiline message
 		if !parserResult.readingMultiLine {
 			if msg[0] == '*' { // represents a multi-bulk reply
-				print("111111111111111")
 				// parse the number of arguments
 				err = parseMultiBulkHeader(msg, &parserResult)
 				if err != nil {
@@ -157,10 +152,8 @@ func parseIt(reader io.Reader, ch chan<- *Parser) {
 					continue
 				}
 			} else if msg[0] == '$' { // mutiline message
-				print("22222222222222")
 				err = parseBulkHeader(msg, &parserResult)
 				if err != nil {
-					print("33333333333333")
 					ch <- &Parser{Err: errors.New("Protocol error" + string(msg))}
 					parserResult = ParserResult{}
 					continue
@@ -194,10 +187,8 @@ func parseIt(reader io.Reader, ch chan<- *Parser) {
 				}
 			}
 		} else { // multiline message
-			print("77777777777777")
 			err = readBody(msg, &parserResult)
 			if err != nil {
-				print("888888888")
 				ch <- &Parser{
 					Err: errors.New("protocol error: " + string(msg)),
 				}
@@ -205,7 +196,6 @@ func parseIt(reader io.Reader, ch chan<- *Parser) {
 				continue
 			}
 			if parserResult.isDone() {
-				print("9999999999\n")
 				var result resp.Reply
 				if parserResult.msgType == '*' {
 					// multi-bulk reply
