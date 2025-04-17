@@ -4,7 +4,7 @@ import (
 	"bufio"
 	"errors"
 	"fmt"
-	resp "goredis/RESP/interface"
+	"goredis/interface/resp"
 	"io"
 	"strconv"
 )

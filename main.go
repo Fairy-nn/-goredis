@@ -1,7 +1,25 @@
 package main
 
-func main() {
+import (
+	"fmt"
+	"goredis/RESP/handler"
+	"goredis/TCP/config"
+	"goredis/TCP/lib/logger"
+	"goredis/TCP/tcp"
+)
 
+func main() {
+	err := tcp.ListenServerWithSig(
+		&tcp.Config{
+			Address: fmt.Sprintf("%s:%d",
+				config.Properties.Bind,
+				config.Properties.Port),
+		},
+
+		handler.MakeHandler()) // + 添加这一行
+	if err != nil {
+		logger.Error(err)
+	}
 }
 
 // func testSimpleStringRequest() {

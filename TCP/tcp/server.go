@@ -3,8 +3,8 @@ package tcp
 import (
 	"context"
 	"fmt"
-	tcp "goredis/TCP/interface"
 	"goredis/TCP/lib/logger"
+	"goredis/interface/tcp"
 	"net"
 	"os"
 	"os/signal"
@@ -20,7 +20,7 @@ type Config struct {
 // also listens for termination signals (SIGINT, SIGTERM) to gracefully shut down the server.
 func ListenServerWithSig(cfg *Config, handler tcp.Handler) error {
 	closeChan := make(chan struct{})
-	sigCh := make(chan os.Signal, 1) 
+	sigCh := make(chan os.Signal, 1)
 	signal.Notify(sigCh, syscall.SIGHUP, syscall.SIGQUIT, syscall.SIGTERM, syscall.SIGINT) // listen for termination signals
 	go func() {
 		sig := <-sigCh

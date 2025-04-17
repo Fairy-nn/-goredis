@@ -4,7 +4,7 @@ import (
 	"bufio"
 	"context"
 	"goredis/TCP/lib/logger"
-	"goredis/TCP/lib/sync/automic"
+	"goredis/TCP/lib/sync/atomic"
 	"goredis/TCP/lib/sync/wait"
 	"net"
 	"sync"
@@ -14,14 +14,14 @@ import (
 // EchoHandler is a TCP handler that echoes back the received data to the client.
 type EchoHandler struct {
 	activation sync.Map
-	closing    automic.Boolean
+	closing    atomic.Boolean
 }
 
 // EchoHandler implements the Handler interface for echoing data back to the client.
 func MakeHandler() *EchoHandler {
 	return &EchoHandler{
 		activation: sync.Map{},
-		closing:    automic.Boolean(0),
+		closing:    atomic.Boolean(0),
 	}
 }
 

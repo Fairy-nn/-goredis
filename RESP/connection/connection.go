@@ -54,6 +54,7 @@ func (c *Connection) GetDBIndex() int {
 }
 
 // select a database
-func (c *Connection) SelectDB(db int) {
+func (c *Connection) SelectDB(db int) error {
 	c.selectedDB = db
+	return nil
 }
