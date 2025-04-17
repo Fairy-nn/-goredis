@@ -106,6 +106,16 @@ func parseBulkHeader(msg []byte, state *ParserResult) error {
 
 }
 
+//调用 readLine 从输入流中读取一行数据。
+// 根据 msg[0] 判断消息类型：
+// *：多条批量字符串，调用 parseMultiBulkHeader。
+// $：批量字符串，调用 parseBulkHeader。
+// +：简单字符串，直接生成 StatusReply。
+// -：错误消息，直接生成 StandardErrorReply。
+// :：整数，直接生成 IntegerReply。
+// 如果是多行消息，调用 readBody 读取后续行。
+// 当 parserResult.isDone() 返回 true 时，表示消息解析完成，将结果发送到 ch
+
 // uses a goroutine to parse the RESP stream and send results to the channel
 func parseIt(reader io.Reader, ch chan<- *Parser) {
 	// panic recovery to handle unexpected errors
