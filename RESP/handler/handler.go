@@ -6,6 +6,7 @@ import (
 	"goredis/RESP/parser"
 	"goredis/TCP/lib/logger"
 	"goredis/TCP/lib/sync/atomic"
+	data "goredis/database"
 	"goredis/interface/database"
 	"goredis/interface/resp"
 	"io"
@@ -25,7 +26,7 @@ type RespHandler struct {
 }
 
 func MakeHandler() *RespHandler {
-	var db database.Database
+	db := data.NewEchoDatabase() // Initialize the database, you can replace it with your own database implementation
 	return &RespHandler{
 		db: db,
 	}
