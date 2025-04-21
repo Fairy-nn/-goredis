@@ -13,7 +13,7 @@ import (
 
 // EchoHandler is a TCP handler that echoes back the received data to the client.
 type EchoHandler struct {
-	activation sync.Map
+	activation sync.Map // stores active connections,sync.Map implemented lock for concurrent access
 	closing    atomic.Boolean
 }
 
@@ -64,8 +64,10 @@ func (e *EchoHandler) Handle(ctx context.Context, conn net.Conn) {
 			return
 		}
 		client.Waiting.Add(1)
+		
 		b := []byte(msg)
-		_, err = conn.Write(b) // Echo the message back to the client
+		_, err = conn.Write(b) // Echo the message back to the client,simple echo server
+		
 		if err != nil {
 			logger.Error("Error writing to connection:", err)
 			client.Waiting.Done()

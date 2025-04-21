@@ -40,10 +40,10 @@ func ListenServerWithSig(cfg *Config, handler tcp.Handler) error {
 
 func ListenAndServe(listener net.Listener, handler tcp.Handler, closeChan <-chan struct{}) {
 	go func() {
-		<-closeChan
+		<-closeChan // wait for termination signal
 		logger.Info("shutting down")
-		_ = listener.Close()
-		_ = handler.Close()
+		_ = listener.Close() // close the listener
+		_ = handler.Close() // close the handler
 	}()
 
 	defer func() {
@@ -52,10 +52,10 @@ func ListenAndServe(listener net.Listener, handler tcp.Handler, closeChan <-chan
 		_ = handler.Close()
 	}()
 
-	ctx := context.Background()
+	ctx := context.Background() // create a new context
 
 	var waitDone sync.WaitGroup
-	for {
+	for { // accept incoming connections in a loop 
 		conn, err := listener.Accept()
 		if err != nil {
 			break
@@ -66,7 +66,7 @@ func ListenAndServe(listener net.Listener, handler tcp.Handler, closeChan <-chan
 			defer func() {
 				waitDone.Done()
 			}()
-			handler.Handle(ctx, conn)
+			handler.Handle(ctx, conn) // handle the connection
 		}()
 	}
 	waitDone.Wait()

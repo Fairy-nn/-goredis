@@ -8,7 +8,7 @@ import (
 	"goredis/TCP/lib/sync/atomic"
 	data "goredis/database"
 	"goredis/interface/database"
-	"goredis/interface/resp"
+	"goredis/resp/reply"
 	"io"
 	"net"
 	"strings"
@@ -26,7 +26,7 @@ type RespHandler struct {
 }
 
 func MakeHandler() *RespHandler {
-	db := data.NewEchoDatabase() // Initialize the database, you can replace it with your own database implementation
+	db := data.NewEchoDatabase() // 创建一个新的数据库实例
 	return &RespHandler{
 		db: db,
 	}
@@ -37,9 +37,12 @@ func (h *RespHandler) Handle(ctx context.Context, conn net.Conn) {
 	if h.closing.Get() { // Check if the handler is closing
 		_ = conn.Close()
 	}
+
 	client := connection.NewConnection(conn) // create a new connection instance
-	h.activeConn.Store(client, 1)
+	h.activeConn.Store(client, 1)            // mark the connection as active
+
 	ch := parser.ParseStream(conn)
+
 	for payload := range ch { // read the payload from the channel
 		if payload.Err != nil {
 			if payload.Err == io.EOF ||
@@ -49,8 +52,10 @@ func (h *RespHandler) Handle(ctx context.Context, conn net.Conn) {
 				logger.Info("Client disconnected")
 				return
 			}
-			errReply := resp.MakeStandardErrorReply(payload.Err.Error())
+
+			errReply := reply.MakeStandardErrorReply(payload.Err.Error())
 			err := client.Write(errReply.ToBytes())
+
 			if err != nil {
 				h.closeClient(client)
 				logger.Error("Error writing to client:", err)
@@ -61,17 +66,21 @@ func (h *RespHandler) Handle(ctx context.Context, conn net.Conn) {
 			logger.Error("Payload data is nil")
 			continue
 		}
-		r, ok := payload.Data.(*resp.MultiBulkReply)
+
+		r, ok := payload.Data.(*reply.MultiBulkReply) // extract the MultiBulkReply from the payload
 		if !ok {
 			logger.Error("Payload data is not a MultiBulkReply")
 			continue
 		}
+
 		result := h.db.Exec(client, r.Args)
+
 		if result == nil {
 			_ = client.Write(unknownCommandError)
 		} else {
 			_ = client.Write(result.ToBytes())
 		}
+
 		logger.Info("Command executed successfully")
 	}
 }

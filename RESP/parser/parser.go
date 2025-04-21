@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"goredis/interface/resp"
+	"goredis/resp/reply"
 	"io"
 	"strconv"
 )
@@ -28,6 +29,8 @@ func (p *ParserResult) isDone() bool {
 }
 
 // parses the RESP stream and returns a channel of Parser results
+// another goroutine is used to read the stream and send results to the channel
+// the channel is buffered to avoid blocking the reader goroutine
 func ParseStream(reader io.Reader) <-chan *Parser {
 	ch := make(chan *Parser, 1)
 	go parseIt(reader, ch)
@@ -35,11 +38,13 @@ func ParseStream(reader io.Reader) <-chan *Parser {
 }
 
 // readLine reads a line from the bufio.Reader and returns the line, a boolean indicating if it's an io error, and an error if any
-func readLine(bufReader *bufio.Reader, state *ParserResult) ([]byte, bool, error) {
+func readSingleLine(bufReader *bufio.Reader, state *ParserResult) ([]byte, bool, error) {
 	var line []byte
 	var err error
 	if state.bulkLen == 0 {
+
 		line, err = bufReader.ReadBytes('\n')
+
 		if err != nil {
 			return nil, true, err // io.EOF
 		}
@@ -59,6 +64,28 @@ func readLine(bufReader *bufio.Reader, state *ParserResult) ([]byte, bool, error
 		state.bulkLen = 0 // 重置 bulkLen
 	}
 	return line, false, nil
+}
+
+func readNotSingleLine(msg []byte, state *ParserResult) error {
+	if len(msg) < 2 {
+		return errors.New("protocol error: message too short")
+	}
+	line := msg[0 : len(msg)-2]
+	var err error
+	if line[0] == '$' {
+		// bulk reply
+		state.bulkLen, err = strconv.ParseInt(string(line[1:]), 10, 64)
+		if err != nil {
+			return errors.New("protocol error: " + string(msg))
+		}
+		if state.bulkLen <= 0 { // null bulk in multi bulks
+			state.args = append(state.args, []byte{})
+			state.bulkLen = 0
+		}
+	} else {
+		state.args = append(state.args, line)
+	}
+	return nil
 }
 
 // parse mutiline header
@@ -132,7 +159,9 @@ func parseIt(reader io.Reader, ch chan<- *Parser) {
 	var msg []byte
 	for {
 		var ioErr bool
-		msg, ioErr, err = readLine(bufReader, &parserResult) // read a line from the buffer
+
+		msg, ioErr, err = readSingleLine(bufReader, &parserResult) // read a line from the buffer
+
 		if err != nil {
 			// io error, return the error
 			if ioErr {
@@ -145,11 +174,14 @@ func parseIt(reader io.Reader, ch chan<- *Parser) {
 			parserResult = ParserResult{}
 			continue
 		}
+
 		// not multiline message
 		if !parserResult.readingMultiLine {
 			if msg[0] == '*' { // represents a multi-bulk reply
+
 				// parse the number of arguments
 				err = parseMultiBulkHeader(msg, &parserResult)
+
 				if err != nil {
 					ch <- &Parser{Err: errors.New("Protocol error" + string(msg))}
 					parserResult = ParserResult{}
@@ -157,12 +189,14 @@ func parseIt(reader io.Reader, ch chan<- *Parser) {
 				}
 				if parserResult.expectedArgsCount == 0 {
 					// empty multi-bulk reply
-					ch <- &Parser{Data: resp.MakeEmptyMultiBulkReply()}
+					ch <- &Parser{Data: reply.MakeEmptyMultiBulkReply()}
 					parserResult = ParserResult{}
 					continue
 				}
 			} else if msg[0] == '$' { // mutiline message
+
 				err = parseBulkHeader(msg, &parserResult)
+
 				if err != nil {
 					ch <- &Parser{Err: errors.New("Protocol error" + string(msg))}
 					parserResult = ParserResult{}
@@ -170,34 +204,42 @@ func parseIt(reader io.Reader, ch chan<- *Parser) {
 				}
 				if parserResult.bulkLen == -1 {
 					// null bulk reply
-					ch <- &Parser{Data: resp.MakeNullReply()}
+					ch <- &Parser{Data: reply.MakeNullReply()}
 					parserResult = ParserResult{}
 					continue
 				}
 			} else { // single line message
 				if msg[0] == '+' { // simple string reply
-					ch <- &Parser{Data: resp.MakeStatusReply(string(msg[1:]))}
+
+					ch <- &Parser{Data: reply.MakeStatusReply(string(msg[1:]))}
+
 					parserResult = ParserResult{}
 					continue
 				} else if msg[0] == '-' { // error reply
-					ch <- &Parser{Data: resp.MakeStandardErrorReply(string(msg[1:]))}
+
+					ch <- &Parser{Data: reply.MakeStandardErrorReply(string(msg[1:]))}
+
 					parserResult = ParserResult{}
 					continue
 				} else if msg[0] == ':' { // integer reply
 					var code int64
+
 					_, err = fmt.Sscanf(string(msg[1:]), "%d", &code)
+
 					if err != nil {
 						ch <- &Parser{Err: errors.New("Protocol error" + string(msg))}
 						parserResult = ParserResult{}
 						continue
 					}
-					ch <- &Parser{Data: resp.MakeIntegerReply(code)}
+					ch <- &Parser{Data: reply.MakeIntegerReply(code)}
 					parserResult = ParserResult{}
 					continue
 				}
 			}
 		} else { // multiline message
-			err = readBody(msg, &parserResult)
+			// read the body of the message
+			err = readNotSingleLine(msg, &parserResult)
+
 			if err != nil {
 				ch <- &Parser{
 					Err: errors.New("protocol error: " + string(msg)),
@@ -205,18 +247,19 @@ func parseIt(reader io.Reader, ch chan<- *Parser) {
 				parserResult = ParserResult{} // reset parser result
 				continue
 			}
+
 			if parserResult.isDone() {
 				var result resp.Reply
 				if parserResult.msgType == '*' {
 					// multi-bulk reply
-					result = resp.MakeMultiBulkReply(parserResult.args)
+					result = reply.MakeMultiBulkReply(parserResult.args)
 				}
 				if parserResult.msgType == '$' {
 					// bulk reply
 					if parserResult.bulkLen == 0 {
-						result = resp.MakeEmptyBulkReply()
+						result = reply.MakeEmptyBulkReply()
 					} else {
-						result = resp.MakeBulkReply(parserResult.args[0])
+						result = reply.MakeBulkReply(parserResult.args[0])
 					}
 				}
 				ch <- &Parser{
@@ -227,25 +270,4 @@ func parseIt(reader io.Reader, ch chan<- *Parser) {
 			}
 		}
 	}
-}
-func readBody(msg []byte, state *ParserResult) error {
-	if len(msg) < 2 {
-		return errors.New("protocol error: message too short")
-	}
-	line := msg[0 : len(msg)-2]
-	var err error
-	if line[0] == '$' {
-		// bulk reply
-		state.bulkLen, err = strconv.ParseInt(string(line[1:]), 10, 64)
-		if err != nil {
-			return errors.New("protocol error: " + string(msg))
-		}
-		if state.bulkLen <= 0 { // null bulk in multi bulks
-			state.args = append(state.args, []byte{})
-			state.bulkLen = 0
-		}
-	} else {
-		state.args = append(state.args, line)
-	}
-	return nil
 }

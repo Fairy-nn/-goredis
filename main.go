@@ -9,6 +9,7 @@ import (
 )
 
 func main() {
+	// 启动一个TCP服务器
 	err := tcp.ListenServerWithSig(
 		&tcp.Config{
 			Address: fmt.Sprintf("%s:%d",
@@ -16,7 +17,7 @@ func main() {
 				config.Properties.Port),
 		},
 
-		handler.MakeHandler()) // + 添加这一行
+		handler.MakeHandler()) // 处理器
 	if err != nil {
 		logger.Error(err)
 	}
