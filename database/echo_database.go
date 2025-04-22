@@ -1,9 +1,9 @@
 package database
 
 import (
-	"goredis/TCP/lib/logger"
 	"goredis/interface/resp"
 	"goredis/resp/reply"
+	"goredis/tcp/lib/logger"
 )
 
 type EchoDatabase struct {

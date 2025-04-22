@@ -1,7 +1,7 @@
 package connection
 
 import (
-	"goredis/TCP/lib/sync/wait"
+	"goredis/tcp/lib/sync/wait"
 	"net"
 	"sync"
 	"time"

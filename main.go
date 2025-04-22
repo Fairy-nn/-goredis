@@ -2,10 +2,10 @@ package main
 
 import (
 	"fmt"
-	"goredis/RESP/handler"
-	"goredis/TCP/config"
-	"goredis/TCP/lib/logger"
-	"goredis/TCP/tcp"
+	"goredis/resp/handler"
+	"goredis/tcp/config"
+	"goredis/tcp/lib/logger"
+	"goredis/tcp/tcp"
 )
 
 func main() {

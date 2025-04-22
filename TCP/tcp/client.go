@@ -3,9 +3,9 @@ package tcp
 import (
 	"bufio"
 	"context"
-	"goredis/TCP/lib/logger"
-	"goredis/TCP/lib/sync/atomic"
-	"goredis/TCP/lib/sync/wait"
+	"goredis/tcp/lib/logger"
+	"goredis/tcp/lib/sync/atomic"
+	"goredis/tcp/lib/sync/wait"
 	"net"
 	"sync"
 	"time"
@@ -64,10 +64,10 @@ func (e *EchoHandler) Handle(ctx context.Context, conn net.Conn) {
 			return
 		}
 		client.Waiting.Add(1)
-		
+
 		b := []byte(msg)
 		_, err = conn.Write(b) // Echo the message back to the client,simple echo server
-		
+
 		if err != nil {
 			logger.Error("Error writing to connection:", err)
 			client.Waiting.Done()

@@ -2,13 +2,13 @@ package handler
 
 import (
 	"context"
-	"goredis/RESP/connection"
-	"goredis/RESP/parser"
-	"goredis/TCP/lib/logger"
-	"goredis/TCP/lib/sync/atomic"
 	data "goredis/database"
 	"goredis/interface/database"
+	"goredis/resp/connection"
+	"goredis/resp/parser"
 	"goredis/resp/reply"
+	"goredis/tcp/lib/logger"
+	"goredis/tcp/lib/sync/atomic"
 	"io"
 	"net"
 	"strings"
