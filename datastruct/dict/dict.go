@@ -8,7 +8,7 @@ type Dict interface {
 	Put(key string, val interface{}) (result int)         //put value by key, return 1 if success, 0 if fail
 	PutIfAbsent(key string, val interface{}) (result int) //put value by key if absent, return 1 if success, 0 if fail
 	PutIfExists(key string, val interface{}) (result int) //put value by key if exists, return 1 if success, 0 if fail
-	Remove(key string, val interface{}) (result int)      //remove value by key, return 1 if success, 0 if fail
+	Remove(key string) (result int)      //remove value by key, return 1 if success, 0 if fail
 	ForEach(consumer Consumer)                            // iterate all key-value pairs
 	Keys() []string                                       // get all keys
 	RandomKey(n int) []string                             // get n random keys

@@ -61,7 +61,7 @@ func (d *SyncDict) PutIfExists(key string, val interface{}) (result int) {
 }
 
 // remove value by key, return 1 if success, 0 if fail
-func (d *SyncDict) Remove(key string, val interface{}) (result int) {
+func (d *SyncDict) Remove(key string) (result int) {
 	_, ok := d.m.Load(key)
 	if !ok {
 		return 0
