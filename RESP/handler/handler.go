@@ -2,13 +2,13 @@ package handler
 
 import (
 	"context"
-	data "goredis/database"
-	"goredis/interface/database"
+	"goredis/database"
+	databaseinterface "goredis/interface/database"
+	"goredis/lib/logger"
+	"goredis/lib/sync/atomic"
 	"goredis/resp/connection"
 	"goredis/resp/parser"
 	"goredis/resp/reply"
-	"goredis/lib/logger"
-	"goredis/lib/sync/atomic"
 	"io"
 	"net"
 	"strings"
@@ -21,12 +21,12 @@ var (
 
 type RespHandler struct {
 	activeConn sync.Map
-	db         database.Database
+	db         databaseinterface.Database // database interface
 	closing    atomic.Boolean
 }
 
 func MakeHandler() *RespHandler {
-	db := data.NewEchoDatabase() // 创建一个新的数据库实例
+	db := database.NewDatabase() // create a new database instance
 	return &RespHandler{
 		db: db,
 	}

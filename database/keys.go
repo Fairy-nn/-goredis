@@ -7,6 +7,7 @@ import (
 )
 
 func init() {
+	RegisterCommand("KEYS", execKeys, 2) // KEYS 命令需要1个参数，所以arity为2
 	RegisterCommand("PING", Ping, 1)
 	RegisterCommand("DEL", execDel, -2)
 	RegisterCommand("EXISTS", execExists, -2)
