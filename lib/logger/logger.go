@@ -24,7 +24,7 @@ type Settings struct {
 }
 
 var (
-	logFile            *os.File
+	//	logFile            *os.File
 	defaultPrefix      = ""
 	defaultCallerDepth = 2
 	logger             *log.Logger
