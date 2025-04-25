@@ -3,9 +3,9 @@ package tcp
 import (
 	"bufio"
 	"context"
-	"goredis/tcp/lib/logger"
-	"goredis/tcp/lib/sync/atomic"
-	"goredis/tcp/lib/sync/wait"
+	"goredis/lib/logger"
+	"goredis/lib/sync/atomic"
+	"goredis/lib/sync/wait"
 	"net"
 	"sync"
 	"time"

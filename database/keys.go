@@ -2,6 +2,7 @@ package database
 
 import (
 	"goredis/interface/resp"
+	"goredis/lib/wildcard"
 	"goredis/resp/reply"
 )
 
@@ -88,4 +89,16 @@ func execRenameNX(db *DB, args [][]byte) resp.Reply {
 	db.PutEntity(dst, entity)
 	db.Remove(src)
 	return reply.MakeIntegerReply(1)
+}
+
+func execKeys(db *DB, args [][]byte) resp.Reply {
+	pattern := wildcard.CompilePattern(string(args[0]))
+	result := make([][]byte, 0) // Initialize result slice
+	db.data.ForEach(func(key string, val interface{}) bool {
+		if pattern.Match(key) {
+			result = append(result, []byte(key)) // Append matching key to result slice
+		}
+		return true // Continue iterating
+	})
+	return reply.MakeMultiBulkReply(result) // Return the result as a MultiBulkReply
 }

@@ -2,9 +2,9 @@ package main
 
 import (
 	"fmt"
+	"goredis/lib/logger"
 	"goredis/resp/handler"
 	"goredis/tcp/config"
-	"goredis/tcp/lib/logger"
 	"goredis/tcp/tcp"
 )
 

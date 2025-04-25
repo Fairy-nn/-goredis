@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	"goredis/interface/tcp"
-	"goredis/tcp/lib/logger"
+	"goredis/lib/logger"
 	"net"
 	"os"
 	"os/signal"
