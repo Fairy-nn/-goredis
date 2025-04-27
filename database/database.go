@@ -1,16 +1,20 @@
 package database
 
 import (
+	"fmt"
+	"goredis/aof"
 	"goredis/interface/resp"
 	"goredis/lib/logger"
 	"goredis/resp/reply"
-	"goredis/tcp/config"
+	"goredis/config"
 	"strconv"
 	"strings"
 )
 
 type Database struct {
-	dbSet []*DB
+	dbSet      []*DB
+	aofHandler *aof.AofHandler // AofHandler is used to handle AOF (Append Only File) operations.
+	//addAof     func(CmdLine)   // addAof is a function to add commands to AOF.
 }
 
 func NewDatabase() *Database {
@@ -18,12 +22,31 @@ func NewDatabase() *Database {
 	if config.Properties.Databases == 0 {
 		config.Properties.Databases = 16
 	}
+
 	database.dbSet = make([]*DB, config.Properties.Databases)
 	for i := range database.dbSet {
 		db := MakeDB()
 		db.index = i
 		database.dbSet[i] = db
 	}
+//	fmt.Println("appendonly:", config.Properties.AppendOnly)
+//	fmt.Println("appendfilename:", config.Properties.AppendFilename)
+	if config.Properties.AppendOnly {
+		aofHandler, err := aof.NewAofHandler(database)
+		fmt.Println("open aof file success")
+		if err != nil {
+			panic(err)
+		}
+		database.aofHandler = aofHandler
+
+		for _, db := range database.dbSet {
+			sdb := db
+			sdb.addAof = func(line CmdLine) {
+				database.aofHandler.AddCommand(sdb.index, line)
+			}
+		}
+	}
+
 	return database
 }
 
@@ -36,7 +59,7 @@ func execSelect(c resp.Connection, database *Database, args [][]byte) resp.Reply
 		return reply.MakeStandardErrorReply("ERR DB index out of range")
 	}
 	c.SelectDB(dbIndex)
-	return reply.MakeIntegerReply(int64(dbIndex))
+	return reply.MakeOKReply()
 }
 
 // Exec executes the command on the database

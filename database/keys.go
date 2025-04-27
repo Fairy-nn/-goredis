@@ -2,6 +2,7 @@ package database
 
 import (
 	"goredis/interface/resp"
+	"goredis/lib/utils"
 	"goredis/lib/wildcard"
 	"goredis/resp/reply"
 )
@@ -29,6 +30,12 @@ func execDel(db *DB, args [][]byte) resp.Reply {
 		keys[i] = string(args[i])
 	}
 	deleted := db.Removes(keys...)
+
+	// write to aof file
+	if deleted > 0 {
+		db.addAof(utils.ToCmdLineWithName("DEL", args...))
+	}
+
 	return reply.MakeIntegerReply(int64(deleted))
 }
 
@@ -47,6 +54,9 @@ func execExists(db *DB, args [][]byte) resp.Reply {
 // Register the flushdb command with arity -1 (variable number of arguments)
 func execFlushDB(db *DB, args [][]byte) resp.Reply {
 	db.Flush()
+
+	// write to aof file
+	db.addAof(utils.ToCmdLineWithName("FLUSHDB", args...))
 	return reply.MakeOKReply()
 }
 
@@ -74,6 +84,8 @@ func execRename(db *DB, args [][]byte) resp.Reply {
 	}
 	db.PutEntity(dst, entity)
 	db.Remove(src)
+	// write to aof file
+	db.addAof(utils.ToCmdLineWithName("RENAME", args...))
 	return reply.MakeOKReply()
 }
 
@@ -89,6 +101,8 @@ func execRenameNX(db *DB, args [][]byte) resp.Reply {
 	}
 	db.PutEntity(dst, entity)
 	db.Remove(src)
+	// write to aof file
+	db.addAof(utils.ToCmdLineWithName("RENAMENX", args...))
 	return reply.MakeIntegerReply(1)
 }
 

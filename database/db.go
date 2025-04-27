@@ -10,12 +10,16 @@ import (
 type DB struct {
 	index int
 	data  dict.Dict
+	addAof func(line CmdLine) // addAof is a function to add commands to AOF.
 }
 
 func MakeDB() *DB {
 	return &DB{
 		index: 0,
 		data:  dict.MakeSyncDict(),
+		addAof: func(line CmdLine) {
+			// do nothing
+		},
 	}
 }
 
@@ -25,7 +29,7 @@ type CmdLine = [][]byte
 
 // parse and execute the command
 func (db *DB) Exec(c resp.Connection, cmdLine CmdLine) resp.Reply {
-	
+
 	cmdName := strings.ToLower(string(cmdLine[0]))
 	// find the command in the command table
 	cmd, ok := cmdTable[cmdName]

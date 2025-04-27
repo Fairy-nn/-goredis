@@ -2,6 +2,7 @@ package reply
 
 import (
 	"bytes"
+	"goredis/interface/resp"
 	"strconv"
 )
 
@@ -79,6 +80,6 @@ func MakeStatusReply(code string) *StatusReply {
 }
 
 // what's more ,emplement a function to decide whether the reply is a error reply or not
-func (s *StatusReply) IsErrorReply() bool {
-	return s.Code[0] == '-'
+func IsErrReply(reply resp.Reply) bool {
+	return reply.ToBytes()[0] == '-'
 }
