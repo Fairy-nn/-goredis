@@ -6,6 +6,11 @@ import (
 	"strconv"
 )
 
+type ErrorReply interface {
+	Error() string
+	ToBytes() []byte
+}
+
 // bulk reply
 type BulkReply struct {
 	Arg []byte
@@ -53,6 +58,9 @@ func (s *StandardErrorReply) ToBytes() []byte {
 }
 func MakeStandardErrorReply(err string) *StandardErrorReply {
 	return &StandardErrorReply{Err: err}
+}
+func (r *StandardErrorReply) Error() string {
+	return r.Err
 }
 
 // Integer reply

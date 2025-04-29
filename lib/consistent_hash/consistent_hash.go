@@ -13,7 +13,7 @@ type NodeMap struct {
 	hashFunc func(data []byte) uint32
 }
 
-func (n *NodeMap) NewNodeMap(hashfunc func(data []byte) uint32) *NodeMap {
+func NewNodeMap(hashfunc func(data []byte) uint32) *NodeMap {
 	if hashfunc == nil { // If no hash function is provided, use crc32 as default
 		hashfunc = crc32.ChecksumIEEE
 	}

@@ -2,6 +2,8 @@ package handler
 
 import (
 	"context"
+	"goredis/cluster"
+	"goredis/config"
 	"goredis/database"
 	databaseinterface "goredis/interface/database"
 	"goredis/lib/logger"
@@ -26,7 +28,16 @@ type RespHandler struct {
 }
 
 func MakeHandler() *RespHandler {
-	db := database.NewStandaloneDatabase() // create a new database instance
+	// db := database.NewStandaloneDatabase() // create a new database instance
+	// return &RespHandler{
+	// 	db: db,
+	// }
+	var db databaseinterface.Database
+	if config.Properties.Self != "" && len(config.Properties.Peers) > 0 {
+		db = cluster.MakeClusterDatabase()
+	} else {
+		db = database.NewStandaloneDatabase()
+	}
 	return &RespHandler{
 		db: db,
 	}
