@@ -7,20 +7,29 @@ import (
 
 func makeRouter() map[string]CmdFunc {
 	routerMap := make(map[string]CmdFunc)
-	routerMap["exists"] = defaultFunc 
+	routerMap["exists"] = defaultFunc
 	routerMap["type"] = defaultFunc
-	routerMap["set"] = defaultFunc 
-	routerMap["get"] = defaultFunc  
-	routerMap["setnx"] = defaultFunc 
-	routerMap["getset"] = defaultFunc 
- 
-	routerMap["ping"] = pingFunc 
-	routerMap["rename"] = renameFunc 
+	routerMap["set"] = defaultFunc
+	routerMap["get"] = defaultFunc
+	routerMap["setnx"] = defaultFunc
+	routerMap["getset"] = defaultFunc
+
+	routerMap["ping"] = pingFunc
+	routerMap["rename"] = renameFunc
 	routerMap["renamex"] = renameFunc
-	routerMap["flushdb"] = flushDBFunc 
-	routerMap["del"] = delFunc 
-	routerMap["select"] = selectFunc 
- 
+	routerMap["flushdb"] = flushDBFunc
+	routerMap["del"] = delFunc
+	routerMap["select"] = selectFunc
+
+	routerMap["lpush"] = defaultFunc
+	routerMap["rpush"] = defaultFunc
+	routerMap["lpop"] = defaultFunc
+	routerMap["rpop"] = defaultFunc
+	routerMap["lrange"] = defaultFunc
+	routerMap["llen"] = defaultFunc
+	routerMap["lindex"] = defaultFunc
+	routerMap["lset"] = defaultFunc
+
 	return routerMap
 }
 
@@ -146,5 +155,3 @@ func delFunc(cluster *ClusterDatabase, conn resp.Connection, args [][]byte) resp
 func selectFunc(cluster *ClusterDatabase, conn resp.Connection, args [][]byte) resp.Reply {
 	return cluster.db.Exec(conn, args)
 }
-
-

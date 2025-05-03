@@ -2,14 +2,15 @@ package database
 
 import (
 	"goredis/datastruct/dict"
+	"goredis/interface/database"
 	"goredis/interface/resp"
 	"goredis/resp/reply"
 	"strings"
 )
 
 type DB struct {
-	index int
-	data  dict.Dict
+	index  int
+	data   dict.Dict
 	addAof func(line CmdLine) // addAof is a function to add commands to AOF.
 }
 
@@ -50,4 +51,47 @@ func ValidateArity(arity int, args [][]byte) bool {
 	} else {
 		return len(args) >= -arity
 	}
+}
+
+// getenity returrns dataentity by key
+func (db *DB) GetEntity(key string) (*database.DataEntity, bool) {
+	raw, ok := db.data.Get(key)
+	if !ok {
+		return nil, false
+	}
+	enity, _ := raw.(*database.DataEntity)
+	return enity, true
+}
+
+// put entity by key
+func (db *DB) PutEntity(key string, entity *database.DataEntity) int {
+	return db.data.Put(key, entity)
+}
+
+func (db *DB) PutIfExists(key string, entity *database.DataEntity) int {
+	return db.data.PutIfExists(key, entity)
+}
+
+func (db *DB) PutIfAbsent(key string, entity *database.DataEntity) int {
+	return db.data.PutIfAbsent(key, entity)
+}
+
+func (db *DB) Remove(key string) int {
+	return db.data.Remove(key)
+}
+
+func (db *DB) Removes(keys ...string) int {
+	deleted := 0
+	for _, key := range keys {
+		_, ok := db.data.Get(key)
+		if ok {
+			db.data.Remove(key)
+			deleted++
+		}
+	}
+	return deleted
+}
+
+func (dr *DB) Flush() {
+	dr.data.Clear()
 }
