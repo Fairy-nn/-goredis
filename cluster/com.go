@@ -68,8 +68,6 @@ func (c *ClusterDatabase) relayExec(peer string, conn resp.Connection,
 
 	// 发送实际的命令并返回执行结果
 	return client.Send(args)
-
-	return nil
 }
 
 // 广播命令到所有对等节点

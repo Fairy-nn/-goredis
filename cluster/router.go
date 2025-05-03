@@ -30,6 +30,20 @@ func makeRouter() map[string]CmdFunc {
 	routerMap["lindex"] = defaultFunc
 	routerMap["lset"] = defaultFunc
 
+	routerMap["hset"] = defaultFunc 
+	routerMap["hsetnx"] = defaultFunc 
+	routerMap["hget"] = defaultFunc    
+	routerMap["hexists"] = defaultFunc 
+	routerMap["hdel"] = defaultFunc
+	routerMap["hlen"] = defaultFunc 
+	routerMap["hgetall"] = defaultFunc 
+	routerMap["hkeys"] = defaultFunc
+	routerMap["hvals"] = defaultFunc 
+	routerMap["hmget"] = defaultFunc  
+	routerMap["hmset"] = defaultFunc 
+	routerMap["hrandfield"] = defaultFunc
+	routerMap["hencoding"] = defaultFunc
+
 	return routerMap
 }
 

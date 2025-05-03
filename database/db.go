@@ -1,7 +1,9 @@
 package database
 
+// hash 数据结构实现
 import (
 	"goredis/datastruct/dict"
+	"goredis/datastruct/hash"
 	"goredis/interface/database"
 	"goredis/interface/resp"
 	"goredis/resp/reply"
@@ -94,4 +96,35 @@ func (db *DB) Removes(keys ...string) int {
 
 func (dr *DB) Flush() {
 	dr.data.Clear()
+}
+
+// getAsHash 函数从数据库中获取存储在指定键的哈希值，如果键不存在则返回 nil 和 false。
+// 如果键存在但对应的数据不是哈希类型，则返回 nil 和 true。
+func (db *DB) getAsHash(key string) (*hash.Hash, bool) {
+	entity, ok := db.GetEntity(key)
+	if !ok {
+		return nil, false
+	}
+	hash, ok := entity.Data.(*hash.Hash)
+	if !ok {
+		return nil, true
+	}
+	return hash, false
+}
+
+// getOrCreateHash 函数用于获取或创建一个哈希对象。
+// 首先尝试获取指定键对应的哈希对象，如果不存在则创建一个新的哈希对象并存储到数据库中。
+func (db *DB) getOrCreateHash(key string) (*hash.Hash, bool) {
+	// 获取指定键对应的哈希对象
+	hashObj, exists := db.getAsHash(key)
+	if exists {
+		return hashObj, true
+	}
+
+	// 创建一个新的哈希对象
+	hashObj = hash.NewHash()
+	// 存储到数据库中
+	db.PutEntity(key, &database.DataEntity{Data: hashObj})
+
+	return hashObj, false
 }
