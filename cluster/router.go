@@ -1,6 +1,7 @@
 package cluster
 
 import (
+	"fmt"
 	"goredis/interface/resp"
 	"goredis/resp/reply"
 )
@@ -30,17 +31,17 @@ func makeRouter() map[string]CmdFunc {
 	routerMap["lindex"] = defaultFunc
 	routerMap["lset"] = defaultFunc
 
-	routerMap["hset"] = defaultFunc 
-	routerMap["hsetnx"] = defaultFunc 
-	routerMap["hget"] = defaultFunc    
-	routerMap["hexists"] = defaultFunc 
+	routerMap["hset"] = defaultFunc
+	routerMap["hsetnx"] = defaultFunc
+	routerMap["hget"] = defaultFunc
+	routerMap["hexists"] = defaultFunc
 	routerMap["hdel"] = defaultFunc
-	routerMap["hlen"] = defaultFunc 
-	routerMap["hgetall"] = defaultFunc 
+	routerMap["hlen"] = defaultFunc
+	routerMap["hgetall"] = defaultFunc
 	routerMap["hkeys"] = defaultFunc
-	routerMap["hvals"] = defaultFunc 
-	routerMap["hmget"] = defaultFunc  
-	routerMap["hmset"] = defaultFunc 
+	routerMap["hvals"] = defaultFunc
+	routerMap["hmget"] = defaultFunc
+	routerMap["hmset"] = defaultFunc
 	routerMap["hrandfield"] = defaultFunc
 	routerMap["hencoding"] = defaultFunc
 
@@ -51,6 +52,8 @@ func makeRouter() map[string]CmdFunc {
 func defaultFunc(cluster *ClusterDatabase, conn resp.Connection, args [][]byte) resp.Reply {
 	key := string(args[1])
 	peer := cluster.peerPicker.GetNode(key)
+	fmt.Println("Forwarding request to peer:", peer)
+	fmt.Println("Command:", string(args[0]), "Args:", args[1:])
 	return cluster.relayExec(peer, conn, args)
 }
 

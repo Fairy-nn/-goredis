@@ -59,7 +59,7 @@ func (h *Hash) Set(key, value string) int {
 		}
 	}
 	// 使用listpack编码
-	if h.encoding == encodingHashTable {
+	if h.encoding == encodingListpack {
 		for i, kv := range h.listpack {
 			if kv[0] == key {
 				h.listpack[i][1] = value // 更新值

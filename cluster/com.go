@@ -3,11 +3,10 @@ package cluster
 import (
 	"context"
 	"errors"
+	"fmt"
 	"goredis/interface/resp"
-	"goredis/lib/utils"
 	"goredis/resp/client"
 	"goredis/resp/reply"
-	"strconv"
 )
 
 // 从连接池中获取一个连接对象
@@ -37,10 +36,12 @@ func (c *ClusterDatabase) getPeerClient(peer string) (*client.Client, error) {
 func (c *ClusterDatabase) returnPeerClient(peer string, client *client.Client) {
 	// 从连接池中查找指定对等节点的连接池
 	pool, ok := c.peerConn[peer]
+	//fmt.Println("returnPeerClient peer:", peer, "client:", client, "pool:", pool)
 	if !ok {
+		//	fmt.Println("peer not found in connection pool")
 		return
 	}
-
+	//	fmt.Println("returnPeerClient peer2222:", peer, "client:", client, "pool:", pool)
 	// 归还连接对象到连接池
 	pool.ReturnObject(context.Background(), client)
 }
@@ -48,9 +49,12 @@ func (c *ClusterDatabase) returnPeerClient(peer string, client *client.Client) {
 // 转发请求到指定的对等节点
 func (c *ClusterDatabase) relayExec(peer string, conn resp.Connection,
 	args [][]byte) resp.Reply {
+	fmt.Println("relayExec peer:", peer, "args:", args)
+	fmt.Println("s.self:", c.self, "peer:", peer)
 	// 检查指定的对等节点是否是当前节点本身
 	if peer == c.self {
 		// 如果是当前节点，直接在本地数据库执行命令
+		fmt.Println("在本地数据库执行命令")
 		return c.db.Exec(conn, args)
 	}
 
@@ -59,12 +63,15 @@ func (c *ClusterDatabase) relayExec(peer string, conn resp.Connection,
 	if err != nil {
 		return reply.MakeStandardErrorReply(err.Error())
 	}
+	// 确保在函数结束时归还连接对象
 	defer func() {
 		c.returnPeerClient(peer, client)
 	}()
 
 	// 设置连接的数据库索引
-	client.Send(utils.ToCmdLine("SELECT", strconv.Itoa(conn.GetDBIndex())))
+	// client.Send(utils.ToCmdLine("SELECT", strconv.Itoa(conn.GetDBIndex())))
+
+	//fmt.Println("select db index:", conn.GetDBIndex())
 
 	// 发送实际的命令并返回执行结果
 	return client.Send(args)
@@ -72,14 +79,14 @@ func (c *ClusterDatabase) relayExec(peer string, conn resp.Connection,
 
 // 广播命令到所有对等节点
 func (c *ClusterDatabase) broadcastExec(conn resp.Connection, args [][]byte) map[string]resp.Reply {
-    results := make(map[string]resp.Reply)
+	results := make(map[string]resp.Reply)
 
-    // 遍历集群中的所有节点
-    for _, peer := range c.nodes {
-        // 调用 relayExec 方法将命令转发到当前节点并执行，获取执行结果
-        result := c.relayExec(peer, conn, args)
-        results[peer] = result
-    }
+	// 遍历集群中的所有节点
+	for _, peer := range c.nodes {
+		// 调用 relayExec 方法将命令转发到当前节点并执行，获取执行结果
+		result := c.relayExec(peer, conn, args)
+		results[peer] = result
+	}
 
-    return results
+	return results
 }

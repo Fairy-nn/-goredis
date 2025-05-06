@@ -1,6 +1,7 @@
 package client
 
 import (
+	"fmt"
 	"goredis/interface/resp"
 	"goredis/lib/sync/wait"
 	"goredis/resp/parser"
@@ -46,7 +47,7 @@ func MakeClient(addr string) (*Client, error) {
 }
 
 func (c *Client) Start() {
-
+	c.ticker = time.NewTicker(10 * time.Second)
 	go c.handleWrite() // 1. 发送请求到服务端
 
 	go func() {
@@ -56,7 +57,6 @@ func (c *Client) Start() {
 		}
 	}()
 
-	c.ticker = time.NewTicker(10 * time.Second)
 	go c.heartbeat() // 3. 周期性地触发心跳操作
 }
 
@@ -102,7 +102,7 @@ func (c *Client) doRequest(req *request) {
 	}
 
 	// 创建响应并转换为字节切片
-	re := reply.MakeMultiBulkReply(req.args) 
+	re := reply.MakeMultiBulkReply(req.args)
 	bytes := re.ToBytes()
 
 	// 发送请求到服务端
@@ -174,6 +174,9 @@ func (c *Client) finishRequest(reply resp.Reply) {
 
 	// 响应结果赋值给请求
 	request.reply = reply
+
+	fmt.Println("finishRequest request:", request, "reply:", reply)
+
 	if request.waiting != nil {
 		request.waiting.Done()
 	}
@@ -203,7 +206,7 @@ func (c *Client) doHeartbeat() {
 
 // 关闭客户端连接
 func (client *Client) Close() {
-	client.ticker.Stop() // 停止心跳定时器
+	client.ticker.Stop()      // 停止心跳定时器
 	close(client.pendingReqs) // 关闭发送请求的通道
 	client.working.Wait()
 	_ = client.conn.Close()
@@ -228,8 +231,9 @@ func (c *Client) Send(args [][]byte) resp.Reply {
 
 	// 将请求放入通道中，等待发送
 	c.pendingReqs <- request
+
 	// 等待响应
-	timeout := request.waiting.WaitWithTimeout(3 * time.Second)	
+	timeout := request.waiting.WaitWithTimeout(30 * time.Second)
 	if timeout {
 		return reply.MakeStandardErrorReply("timeout")
 	}

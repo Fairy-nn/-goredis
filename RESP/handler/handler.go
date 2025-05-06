@@ -2,6 +2,7 @@ package handler
 
 import (
 	"context"
+	"fmt"
 	"goredis/cluster"
 	"goredis/config"
 	"goredis/database"
@@ -53,8 +54,9 @@ func (h *RespHandler) Handle(ctx context.Context, conn net.Conn) {
 	h.activeConn.Store(client, 1)            // mark the connection as active
 
 	ch := parser.ParseStream(conn)
-
+	fmt.Println("ch:", ch)
 	for payload := range ch { // read the payload from the channel
+		fmt.Println("在通道中读取到数据:", payload)
 		if payload.Err != nil {
 			if payload.Err == io.EOF ||
 				payload.Err == io.ErrUnexpectedEOF ||

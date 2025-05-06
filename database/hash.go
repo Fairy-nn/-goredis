@@ -1,6 +1,7 @@
 package database
 
 import (
+	"fmt"
 	"goredis/interface/resp"
 	"goredis/lib/utils"
 	"goredis/resp/reply"
@@ -170,19 +171,21 @@ func execHMGet(db *DB, args [][]byte) resp.Reply {
 	hash, ok := db.getAsHash(key)
 	if !ok {
 		results := make([][]byte, len(args)-1)
-        for i := range results {
-            results[i] = nil
-        }
-        return reply.MakeMultiBulkReply(results)
+		for i := range results {
+			results[i] = nil
+		}
+		return reply.MakeMultiBulkReply(results)
 	}
 
 	// 返回哈希表中多个字段的值
 	values := make([][]byte, len(args)-1)
 	for i, field := range args[1:] {
 		value, exists := hash.Get(string(field))
+		fmt.Printf("field: %s, value: %s\n", string(field), value)
 		if exists {
 			values[i] = []byte(value)
 		} else {
+			fmt.Println("Field not found:", string(field))
 			values[i] = nil
 		}
 	}
@@ -195,7 +198,7 @@ func execHMGet(db *DB, args [][]byte) resp.Reply {
 func execHMSet(db *DB, args [][]byte) resp.Reply {
 	key := string(args[0])
 
-	if len(args)%2==0{
+	if len(args)%2 == 0 {
 		return reply.MakeStandardErrorReply("wrong number of arguments for 'hmset' command")
 	}
 
@@ -239,7 +242,7 @@ func execHSetNX(db *DB, args [][]byte) resp.Reply {
 	// 获取哈希表
 	hash, _ := db.getOrCreateHash(key)
 
-	_,ok:= hash.Get(field)
+	_, ok := hash.Get(field)
 	if ok {
 		return reply.MakeIntegerReply(0)
 	}
@@ -252,17 +255,17 @@ func execHSetNX(db *DB, args [][]byte) resp.Reply {
 	return reply.MakeIntegerReply(int64(result))
 }
 
-func init(){
+func init() {
 	RegisterCommand("HSET", execHSet, 4)
-    RegisterCommand("HGET", execHGet, 3)
-    RegisterCommand("HEXISTS", execHExists, 3)
-    RegisterCommand("HDEL", execHDel, -3)
-    RegisterCommand("HLEN", execHLen, 2)
-    RegisterCommand("HGETALL", execHGetAll, 2)
-    RegisterCommand("HKEYS", execHKeys, 2)
-    RegisterCommand("HVALS", execHVals, 2)
-    RegisterCommand("HMGET", execHMGet, -3)
-    RegisterCommand("HMSET", execHMSet, -4)
-    RegisterCommand("HENCODING", execHEncoding, 2)
-    RegisterCommand("HSETNX", execHSetNX, 4)
+	RegisterCommand("HGET", execHGet, 3)
+	RegisterCommand("HEXISTS", execHExists, 3)
+	RegisterCommand("HDEL", execHDel, -3)
+	RegisterCommand("HLEN", execHLen, 2)
+	RegisterCommand("HGETALL", execHGetAll, 2)
+	RegisterCommand("HKEYS", execHKeys, 2)
+	RegisterCommand("HVALS", execHVals, 2)
+	RegisterCommand("HMGET", execHMGet, -3)
+	RegisterCommand("HMSET", execHMSet, -4)
+	RegisterCommand("HENCODING", execHEncoding, 2)
+	RegisterCommand("HSETNX", execHSetNX, 4)
 }

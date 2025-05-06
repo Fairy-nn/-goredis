@@ -36,7 +36,10 @@ func (r *MultiBulkReply) ToBytes() []byte {
 	var buf bytes.Buffer
 	buf.WriteString("*" + strconv.Itoa(len(r.Args)) + "\r\n")
 	for _, arg := range r.Args {
-		if len(arg) == 0 {
+		if arg == nil {
+			// nil 值使用 $-1\r\n 表示
+			buf.WriteString("$-1\r\n")
+		} else if len(arg) == 0 {
 			buf.WriteString("$0\r\n\r\n")
 		} else {
 			buf.WriteString("$" + strconv.Itoa(len(arg)) + "\r\n" + string(arg) + "\r\n")

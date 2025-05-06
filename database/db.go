@@ -32,7 +32,6 @@ type CmdLine = [][]byte
 
 // parse and execute the command
 func (db *DB) Exec(c resp.Connection, cmdLine CmdLine) resp.Reply {
-
 	cmdName := strings.ToLower(string(cmdLine[0]))
 	// find the command in the command table
 	cmd, ok := cmdTable[cmdName]
@@ -109,7 +108,7 @@ func (db *DB) getAsHash(key string) (*hash.Hash, bool) {
 	if !ok {
 		return nil, true
 	}
-	return hash, false
+	return hash, true // 修复：返回hash和true，表示成功找到哈希表
 }
 
 // getOrCreateHash 函数用于获取或创建一个哈希对象。

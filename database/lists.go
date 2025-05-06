@@ -2,6 +2,7 @@ package database
 
 import (
 	"container/list" // 使用go标准库中的list包来实现双向链表
+	"fmt"
 	"goredis/interface/database"
 	"goredis/interface/resp"
 	"goredis/lib/utils"
@@ -24,7 +25,7 @@ func getList(db *DB, key string) (*list.List, bool) {
 		return nil, true
 	}
 	// 返回实体的值
-	return lst, false
+	return lst, true
 }
 
 // execLPush 函数实现了LPUSH命令，用于将一个或多个值插入到列表的头部。
@@ -33,10 +34,10 @@ func execLPush(db *DB, args [][]byte) resp.Reply {
 	// 获取key和value
 	key := string(args[0])
 	value := args[1:]
-
 	// 列表存在但不是列表类型，返回错误
 	lst, ok := getList(db, key)
 	if lst == nil && ok {
+	
 		return reply.MakeWrongTypeErrReply()
 	}
 
@@ -49,9 +50,10 @@ func execLPush(db *DB, args [][]byte) resp.Reply {
 	db.PutEntity(key, &database.DataEntity{
 		Data: lst,
 	})
+	// 判断是否存到数据库
+	db.GetEntity(key)
 	// 将该命令添加到AOF日志中
 	db.addAof(utils.ToCmdLineWithName("LPUSH", args...))
-
 	//返回新的列表长度
 	return reply.MakeIntegerReply(int64(lst.Len()))
 }
@@ -89,17 +91,24 @@ func execRPush(db *DB, args [][]byte) resp.Reply {
 // 命令格式：LPOP key
 func execLPop(db *DB, args [][]byte) resp.Reply {
 	key := string(args[0])
-
 	lst, ok := getList(db, key)
+	
+	if !ok {
+		return reply.MakeNullReply()
+	}
 	if lst == nil {
 		return reply.MakeWrongTypeErrReply()
 	}
-	if lst.Len() == 0 || !ok {
+	if lst.Len() == 0 {
+		fmt.Println("LPOP: lst is empty")
 		return reply.MakeNullReply()
 	}
 
 	// 从列表中移除第一个元素
-	value := lst.Remove(lst.Front())
+	element := lst.Front()
+	lst.Remove(element)
+	value := element.Value.([]byte)
+	
 	if lst.Len() == 0 {
 		// 如果列表为空，则从数据库中删除该键
 		db.Remove(key)
@@ -113,7 +122,7 @@ func execLPop(db *DB, args [][]byte) resp.Reply {
 	// 将该命令添加到AOF日志中
 	db.addAof(utils.ToCmdLineWithName("LPOP", args...))
 	// 返回移除的元素
-	return reply.MakeBulkReply(value.([]byte))
+	return reply.MakeBulkReply(value)
 }
 
 // execRPop 函数实现了RPOP命令，用于移除并返回列表的最后一个元素。
@@ -122,15 +131,20 @@ func execRPop(db *DB, args [][]byte) resp.Reply {
 	key := string(args[0])
 
 	lst, ok := getList(db, key)
+	if !ok {
+		return reply.MakeNullReply()
+	}
 	if lst == nil {
 		return reply.MakeWrongTypeErrReply()
 	}
-	if lst.Len() == 0 || !ok {
+	if lst.Len() == 0 {
 		return reply.MakeNullReply()
 	}
 
 	// 从列表中移除最后一个元素
-	value := lst.Remove(lst.Back())
+	element := lst.Back()
+	lst.Remove(element)
+	value := element.Value.([]byte)
 	if lst.Len() == 0 {
 		// 如果列表为空，则从数据库中删除该键
 		db.Remove(key)
@@ -144,7 +158,7 @@ func execRPop(db *DB, args [][]byte) resp.Reply {
 	// 将该命令添加到AOF日志中
 	db.addAof(utils.ToCmdLineWithName("RPOP", args...))
 	// 返回移除的元素
-	return reply.MakeBulkReply(value.([]byte))
+	return reply.MakeBulkReply(value)
 }
 
 // execLRange 函数实现了LRANGE命令，用于返回列表中指定范围的元素。
@@ -199,8 +213,6 @@ func execLRange(db *DB, args [][]byte) resp.Reply {
 		}
 		index++
 	}
-	// 将该命令添加到AOF日志中
-	db.addAof(utils.ToCmdLineWithName("LRANGE", args...))
 	return reply.MakeMultiBulkReply(elements)
 }
 
