@@ -4,6 +4,8 @@ package database
 import (
 	"goredis/datastruct/dict"
 	"goredis/datastruct/hash"
+	"goredis/datastruct/set"
+	"goredis/datastruct/zset"
 	"goredis/interface/database"
 	"goredis/interface/resp"
 	"goredis/resp/reply"
@@ -126,4 +128,50 @@ func (db *DB) getOrCreateHash(key string) (*hash.Hash, bool) {
 	db.PutEntity(key, &database.DataEntity{Data: hashObj})
 
 	return hashObj, false
+}
+
+// getAsSet 函数用于从数据库中获取指定键对应的集合数据
+func getAsSet(db *DB, key string) (set.Set, reply.ErrorReply) {
+	entity, ok := db.GetEntity(key)
+	if !ok {
+		return nil, nil
+	}
+	// 使用类型断言，尝试将实体对象的数据转换为 set.Set 类型
+	s, ok := entity.Data.(set.Set)
+	if !ok {
+		return nil, reply.MakeWrongTypeErrReply()
+	}
+	return s, nil
+}
+
+// getOrInitSet 函数用于获取指定键对应的集合数据，如果该键不存在，则初始化一个新的集合
+func getOrInitSet(db *DB, key string) (set.Set, bool, reply.ErrorReply) {
+	s, err := getAsSet(db, key) // 尝试从数据库中获取指定键对应的集合对象
+	if err != nil {
+		return nil, false, err
+	}
+	// 用于标记集合是否为新创建的
+	isNew := false
+	if s == nil {
+		s = set.NewHashSet()
+		isNew = true
+	}
+	return s, isNew, nil
+}
+
+// 
+func getAsZSet(db *DB, key string) (zset.ZSet, bool) {
+	// Get entity from database
+	entity, exists := db.GetEntity(key)
+	if !exists {
+		return zset.NewZSet(), false
+	}
+
+	// Check if entity is a ZSet
+	zsetObj, ok := entity.Data.(zset.ZSet)
+	if !ok {
+		return nil, true // Key exists but is not a ZSet
+	}
+
+	return zsetObj, true
 }

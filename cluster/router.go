@@ -45,6 +45,13 @@ func makeRouter() map[string]CmdFunc {
 	routerMap["hrandfield"] = defaultFunc
 	routerMap["hencoding"] = defaultFunc
 
+	routerMap["sadd"] = defaultFunc        // sadd key member [member ...]
+	routerMap["scard"] = defaultFunc       // scard key
+	routerMap["sismember"] = defaultFunc   // sismember key member
+	routerMap["smembers"] = defaultFunc    // smembers key
+	routerMap["srem"] = defaultFunc        // srem key member [member ...]
+	routerMap["spop"] = defaultFunc        // spop key [count]
+	routerMap["srandmember"] = defaultFunc // srandmember key [count]
 	return routerMap
 }
 
